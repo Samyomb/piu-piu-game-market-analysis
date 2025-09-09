@@ -1,6 +1,3 @@
 pandas
-numpy
-matplotlib
-jupyter
-pyarrow
-sqlalchemy
+plotly express
+sql
