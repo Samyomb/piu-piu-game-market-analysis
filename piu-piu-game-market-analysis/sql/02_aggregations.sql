@@ -1,8 +1,71 @@
--- Agrégations exemples
--- Prix moyen par genre
--- SELECT genre_norm AS genre, AVG(price) AS avg_price FROM games GROUP BY genre_norm ORDER BY avg_price DESC;
+Agrégations
+                       Prix moyen par region
 
--- Part multi/solo (au sein de l'échantillon)
--- SELECT CASE WHEN is_multiplayer THEN 'multijoueur' ELSE 'solo' END AS mode,
---        COUNT(*) * 1.0 / (SELECT COUNT(*) FROM games) AS share
--- FROM games GROUP BY 1;
+WITH spend_per_player AS (
+  SELECT
+    region,
+    platform,
+    genre,
+    free_or_paying,
+    gameid,
+    playerid,
+    SUM(price) AS spend_player
+  FROM `projetfinalvideogames.final_mart.view_table_1500_genre_bien`
+  WHERE platform IN ('steam','playstation')
+  GROUP BY 1,2,3,4,5,6
+),
+per_game AS (SELECT
+    region,
+    platform,
+    genre,
+    free_or_paying,
+    gameid,
+    AVG(spend_player) AS panier_moyen_region_jeu
+  FROM spend_per_player
+  GROUP BY 1,2,3,4,5
+)
+SELECT
+  region,
+  platform,
+  genre,
+  free_or_paying,
+  gameid,
+  ROUND(panier_moyen_region_jeu, 2) AS panier_moyen_region_jeu,
+  ROUND(AVG(panier_moyen_region_jeu) OVER (PARTITION BY region, platform, genre, free_or_paying), 2) AS panier_moyen_region_bucket
+FROM per_game;
+
+
+                        Panier moyen par genre
+
+WITH spend_per_player AS (SELECT
+    genre,
+    platform,
+    region,
+    free_or_paying,
+    gameid,
+    playerid,
+    SUM(price) AS spend_player
+  FROM `projetfinalvideogames.final_mart.view_table_1500_genre_bien`
+  WHERE platform IN ('steam','playstation')
+  GROUP BY 1,2,3,4,5,6
+),
+per_game AS (
+  SELECT
+    genre,
+    platform,
+    region,
+    free_or_paying,
+    gameid,
+    AVG(spend_player) AS panier_moyen_jeu
+  FROM spend_per_player
+  GROUP BY 1,2,3,4,5
+)
+SELECT
+  genre,
+  platform,
+  region,
+  free_or_paying,
+  gameid,
+  ROUND(panier_moyen_jeu, 2) AS panier_moyen_jeu,
+  ROUND(AVG(panier_moyen_jeu) OVER (PARTITION BY genre, platform, region, free_or_paying), 2) AS panier_moyen_bucket
+FROM per_game
