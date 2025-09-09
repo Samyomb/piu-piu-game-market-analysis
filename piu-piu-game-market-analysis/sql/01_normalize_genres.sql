@@ -1,4 +1,4 @@
--- Normalisation des genres
+Normalisation des genres
 
 SELECT
   gameid,
